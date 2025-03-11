@@ -2,7 +2,6 @@ import "./global.css";
 import { Card, CardContent } from "./ui/card";
 import { WalletSelector } from "./walletSelector/aptos/WalletSelector";
 import { Button } from "./ui/button";
-import * as React from 'react';
 import { useEffect, useState } from "react";
 import {
   chainToPlatform,
@@ -123,8 +122,13 @@ export const MultiChain = () => {
 
   useEffect(() => {
     const getBalances = async () => {
-      if (!wormholeContext) {
-        return;
+      if (!wormholeContext || !sourceWallet || !sourceWallet.getAddress()) {
+        return null;
+      }
+
+      const address = sourceWallet.getAddress();
+      if (!address) {
+        return null;
       }
 
       try {
@@ -135,21 +139,24 @@ export const MultiChain = () => {
 
         const result = await platform
           .utils()
-          .getBalances(selectedSourceChain, rpc, sourceWallet?.getAddress()!, [
+          .getBalances(selectedSourceChain, rpc, address, [
             testnetChainTokens[selectedSourceChain].tokenId.address,
           ]);
 
         const currentAmount =
           result[testnetChainTokens[selectedSourceChain].tokenId.address];
 
-        const usdcBalance = amountUtils.fromBaseUnits(
-          currentAmount ?? BigInt(0),
+        if (!currentAmount) {
+          return amountUtils.fromBaseUnits(BigInt(0), testnetChainTokens[selectedSourceChain].decimals);
+        }
+
+        return amountUtils.fromBaseUnits(
+          currentAmount,
           testnetChainTokens[selectedSourceChain].decimals
         );
-
-        return usdcBalance;
       } catch (e) {
         console.error("Failed to get token balances", e);
+        return amountUtils.fromBaseUnits(BigInt(0), testnetChainTokens[selectedSourceChain].decimals);
       }
     };
 
@@ -158,7 +165,7 @@ export const MultiChain = () => {
         setSourceWalletUSDCBalance(usdcBalance);
       }
     });
-  }, [sourceWallet, platform]);
+  }, [sourceWallet, platform, selectedSourceChain, wormholeContext]);
 
   const onSetMaxAmount = () => {
     if (!sourceWalletUSDCBalance) {
@@ -213,7 +220,7 @@ export const MultiChain = () => {
       cctpRequest,
       signer,
       quote,
-      Wormhole.chainAddress("Aptos", account?.address?.toStringLong())
+      Wormhole.chainAddress("Aptos", account?.address?.toString())
     );
     console.log("Initiated transfer with receipt: ", receipt);
 
@@ -257,7 +264,7 @@ export const MultiChain = () => {
 
     const signer = new AptosSigner(
       "Aptos",
-      account?.address?.toStringLong() ?? "",
+      account?.address?.toString()!,
       {},
       aptosWalletContext
     );

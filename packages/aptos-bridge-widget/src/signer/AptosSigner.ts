@@ -56,7 +56,7 @@ export class AptosSigner<N extends Network, C extends Chain>
         tx as AptosUnsignedTransaction<Network, AptosChains>,
         this._wallet
       );
-      txHashes.push(txId);
+      txHashes.push(txId.hash);
     }
     return txHashes;
   }

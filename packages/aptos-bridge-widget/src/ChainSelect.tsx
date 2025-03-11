@@ -74,6 +74,7 @@ export function ChainSelect({
                 className="ml-2 underline flex flex-row gap-2"
               >
                 {truncateAddress(mainnetChainTokens[item.key].tokenId.address)}
+                <ExternalLink className="h-4 w-4" />
               </a>
             </div>
           </DropdownMenuItem>
